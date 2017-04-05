@@ -1,3 +1,5 @@
+//solution of Nationwide Internet Competition > Asia Regional - Daejeon Nationalwide Internet Competition 2012 #G
+//https://www.acmicpc.net/problem/9012
 #include <stdio.h>
 #include <iostream>
 #include <string>
