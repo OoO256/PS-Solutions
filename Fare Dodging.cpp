@@ -53,7 +53,6 @@ struct compair_path {
 
 int n_city, n_road, start, endcity, basicprice, price_1, basicfine;
 
-
 float min(float a, float b) {
 	if (a < b) return a;
 	else return b;
