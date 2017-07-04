@@ -3,10 +3,8 @@ this code is a solution of Fare Dodging
 from ACM-ICPC > Regionals > Europe > Northwestern European Regional Contest > Benelux Algorithm Programming Contest > BAPC 2013 Preliminaries #F
 https://www.acmicpc.net/problem/9323
 
-programer: ÀÌ¿ë¿í Yonguk Lee 
+programer: ì´ìš©ìš± Yonguk Lee 
 email: qjrmsktso2@gmail.com
-
-It takes 44ms, 4732 KB to solve problem
 
 I hope you can learn sth from mine!
 */
@@ -19,34 +17,34 @@ I hope you can learn sth from mine!
 #include <functional>
 #define INF 999999999
 using namespace std;
-class road
+struct road
 {
-public:
 	int dist;
 	int dest;
 	float p;
-
-	void init(int a, int b, float c) {
-		dist = a;
-		dest = b;
-		p = c;
-	}
 };
-class path
+road make_road (int a, int b, float c) {
+	road r;
+	r.dist = a;
+	r.dest = b;
+	r.p = c;
+	return r;
+};
+struct path
 {
-public:
 	float min;
-	float dist_0; //¹«ÀÓ
-	float dist_1; //À¯ÀÓ
+	float dist_0; //ë¬´ì„
+	float dist_1; //ìœ ì„
 	int dest;
-
-	void init(float a, float b, float c, int d) {
-		min=a;
-		dist_0=b;
-		dist_1=c;
-		dest=d;
-	}
 };
+path make_path(float a, float b, float c, int d) {
+	path p;
+	p.min=a;
+	p.dist_0=b;
+	p.dist_1=c;
+	p.dest=d;
+	return p;
+}
 struct compair_path {
 	bool operator()(path a, path b) {
 		return a.min > b.min;
@@ -54,42 +52,34 @@ struct compair_path {
 };
 
 int n_city, n_road, start, endcity, basicprice, price_1, basicfine;
-vector<road>edge[205];
+
 
 float min(float a, float b) {
 	if (a < b) return a;
 	else return b;
 }
 
-void getinput() {
+void getinput(vector<road> *edge) {
 	scanf("%d %d %d %d %d %d %d", &n_city, &n_road, &start, &endcity, &basicprice, &price_1, &basicfine);
 	int i_start, i_end, i_dist;
 	float  i_p;
 	for (int i = 0; i < n_road; i++) {
 		scanf("%d %d %f %d", &i_start, &i_end, &i_p, &i_dist);
-
-		road a, b;
-		a.init(i_dist, i_end, i_p/100);
-		b.init(i_dist, i_start, i_p / 100);
-		edge[i_start].push_back(a);
-		edge[i_end].push_back(b);
+		edge[i_start].push_back(make_road(i_dist, i_end, i_p / 100));
+		edge[i_end].push_back(make_road(i_dist, i_start, i_p / 100));
 	}
 }
 
-float dijkstra() {
-	float dist[205][2];//0:¹«ÀÓ½ÂÂ÷ 1:À¯ÀÓ½ÂÂ÷
+float dijkstra(vector<road> *edge) {
+	float dist[205][2];//0:ë¬´ì„ìŠ¹ì°¨ 1:ìœ ì„ìŠ¹ì°¨
 	for (int i = 0; i < 205; i++) {
 		dist[i][0] = INF;
 		dist[i][1] = INF;
 	}
-
 	priority_queue<path, vector<path>, compair_path>pq;
-
 	dist[start][0] = 0;
 	dist[start][1] = basicprice;
-	path pa;
-	pa.init(0, 0, basicprice, start);
-	pq.push(pa);
+	pq.push(make_path(0, 0, basicprice, start));
 
 	while (!pq.empty()) {
 		int curr = pq.top().dest;
@@ -99,7 +89,6 @@ float dijkstra() {
 
 		if (currdist_0 != dist[curr][0] ||  currdist_1 != dist[curr][1]) continue;
 
-
 		for (road next : edge[curr]) {
 
 			float nextdist_0 = min(currdist_0, currdist_1) + (next.dist*price_1 + basicfine)*next.p;
@@ -107,9 +96,8 @@ float dijkstra() {
 
 			if ( min(nextdist_0, nextdist_1) < min(dist[next.dest][0], dist[next.dest][1]) ) {
 					dist[next.dest][0] = min(dist[next.dest][0], nextdist_0);
-					dist[next.dest][1] = min(dist[next.dest][1], nextdist_1);
-					pa.init(min(dist[next.dest][0], dist[next.dest][1]), dist[next.dest][0], dist[next.dest][1], next.dest);
-					pq.push(pa);
+					dist[next.dest][1] = min(dist[next.dest][1], nextdist_1);					
+					pq.push(make_path(min(dist[next.dest][0], dist[next.dest][1]), dist[next.dest][0], dist[next.dest][1], next.dest));
 			}
 		}
 	}
@@ -120,12 +108,9 @@ int main() {
 	scanf("%d", &testcase);
 	while (testcase--)
 	{
-		getinput();
-		printf("%.2f\n", dijkstra());
-
-		for (int i = 0; i < 205; i++)
-			edge[i].clear();
-
+		vector<road>edge[205];
+		getinput(edge);
+		printf("%.2f\n", dijkstra(edge));
 	}
 	return 0;
 }
