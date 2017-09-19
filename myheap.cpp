@@ -3,124 +3,116 @@
 #include <algorithm>
 #include <vector>
 #include <bitset>
-#include <math.h>
-using namespace std;
-const int MAXN = 1000 * 1000;
-const int BASE = -1;
-int n, x;
+#include <functional>
+#include <cmath>
 
-template <typename T>
+template <typename T, typename Op = std::less<T>>
 class heap {
+  enum { BASE = -1 };
+
+  //treeì˜ ë†’ì´
+  int h;  
+
+  //heapì´ full-binary-treeì¼ë•Œ nodeê°€ ê°€ì§ˆ ìˆ˜ ìˆëŠ” ê°€ì¥ í° index
+  int size_full; 
+  
+  //ë¹„êµì— ì‚¬ìš©í•  ì—°ì‚°ì
+  Op op;
+  
+  //íŠ¸ë¦¬ë¥¼ êµ¬ì„±í•  ë²¡í„°
+  std::vector<T> tree;
+  
+  //ì§€ê¸ˆì˜ size
+  int size_now;
+
 public:
-	int h;	
-	//treeÀÇ ³ôÀÌ
+  heap(int size, Op oper = Op{}) : op(oper) {
+    h = ceil(log(size+1) / log(2));
+    size_full = 1 << h;
+    size_now = 0;
+    tree.assign(size_full, BASE);
+  }
 
-	int size_full; 
-	//heapÀÌ full-binary-treeÀÏ¶§ node°¡ °¡Áú ¼ö ÀÖ´Â °¡Àå Å« index
-	
-	T* pointer_heap_operator;
-	//ºñ±³¿¡ »ç¿ëÇÒ ¿¬»êÀÚ
-	
-	vector<int> tree;
-	//Æ®¸®¸¦ ±¸¼ºÇÒ º¤ÅÍ
-	
-	int size_now;
-	//Áö±İÀÇ size
+  void push(int new_element) {
+    size_now++;
+    tree[size_now] = new_element;
+    int index_curr = size_now;
+    while (index_curr / 2 >= 1) {
+      if (op(tree[index_curr/2], tree[index_curr])) {
+        //op(ë¶€ëª¨, ìì‹)
+        //ìì‹ë³´ë‹¤ ë¶€ëª¨ê°€ ì‘ìœ¼ë©´
+        std::swap(tree[index_curr], tree[index_curr / 2]);
+      }
 
+      index_curr /= 2;
+    }
+    
+  }
 
-	heap(int size, T* pointer_given_operator) {
-		h = ceil(log(size+1) / log(2));
-		size_full = 1 << h;
-		size_now = 0;
-		pointer_heap_operator = pointer_given_operator;
-		tree.assign(size_full, BASE);
-	};
-	//»ı¼ºÀÚ
+  void pop(void) {
+    tree[1] = BASE;
+    std::swap(tree[1], tree[size_now]);
+    size_now--;
 
-	void push(int new_element) {
-		size_now++;
-		tree[size_now] = new_element;
-		int index_curr = size_now;
-		while (index_curr / 2 >= 1) {
-			if ((*pointer_heap_operator)(tree[index_curr/2], tree[index_curr])) {
-				//op(ºÎ¸ğ, ÀÚ½Ä)
-				//ÀÚ½Äº¸´Ù ºÎ¸ğ°¡ ÀÛÀ¸¸é
-				swap(tree[index_curr], tree[index_curr / 2]);
-			}
+    int curr = 1;
+    while (curr<size_full/2) {
+      if (op(tree[curr], tree[curr * 2]) || op(tree[curr], tree[curr * 2 + 1])) {
+        //êµì²´ í•„ìˆ˜
+        if (op(tree[curr * 2 + 1], tree[curr * 2]) || tree[curr * 2] == tree[curr * 2 + 1]) {
+          std::swap(tree[curr], tree[curr * 2]);
+          curr *= 2;
+        }
+        else {
+          std::swap(tree[curr], tree[curr * 2 + 1]);
+          curr = curr * 2 + 1;
+        }
+      }
+      else {
+        //êµì²´ x
+        return;
+      }
+    }
+  }
 
-			index_curr /= 2;
-		}
-		
-	};
-	void pop(void) {
-		tree[1] = BASE;
-		swap(tree[1], tree[size_now]);
-		size_now--;
+  int top(void) {
+    return tree[1];
+  }
 
-		int curr = 1;
-		while (curr<size_full/2) {
-			if ((*pointer_heap_operator)(tree[curr], tree[curr * 2]) || (*pointer_heap_operator)(tree[curr], tree[curr * 2 + 1])) {
-				//±³Ã¼ ÇÊ¼ö
-				if ((*pointer_heap_operator)(tree[curr * 2 + 1], tree[curr * 2]) || tree[curr * 2] == tree[curr * 2 + 1]) {
-					swap(tree[curr], tree[curr * 2]);
-					curr *= 2;
-				}
-				else {
-					swap(tree[curr], tree[curr * 2 + 1]);
-					curr = curr * 2 + 1;
-				}
-			}
-			else {
-				//±³Ã¼ x
-				return;
-			}
-		}
-	}
-
-	int top(void) {
-		return tree[1];
-	};
-};
-
-struct struct_operator
-{
-	bool operator()(int a, int b) {
-		//same as >
-
-		return a < b;
-	}
+  int size() {
+    return size_now;
+  }
 };
 
 int main(void) {
-	freopen("input.txt", "r", stdin);
-	scanf("%d", &n);
-	struct_operator myoperator;
+  int n, x;
+  //freopen("input.txt", "r", stdin);
+  scanf("%d", &n);
 
-	heap<struct_operator> myheap(n, &myoperator);
-	//myheapÀº °¡Àå Å« ¿ø¼Ò¸¦ top¿¡ µÒ
-	//ÀÎÀÚ·Î ÁØ ÆãÅÍ°¡ ¾Õ ÀÎÀÚ°¡ ´õ ÀÛÀºÁö È®ÀÎÇÏ´Â °Å¶ó
-	//ÀÎÀÚ(ºÎ¸ğ, ÀÚ½Ä)ÇØ¼­ true¸é swapÇÏ±â ¶§¹®¿¡
-	//ÀÛÀº ºÎ¸ğ´Â ÀÚ½Ä°ú ½º¿ÒµÊ¤Ğ¤Ğ
-	//È£¿¡¿¡¿¡¤Ä¿¨ ³Ñ¸ğ³Ñ¸ğ ½½ÆÛ¿ä¿À
-	//there is biggest element at top
-	int temp;
-	while (n--)
-	{
-		scanf("%d", &x);
-		if (x == 0) {
-			if (myheap.size_now == 0) {
-				printf("0\n");
-			}
-			else {
-				temp = myheap.top();
-				myheap.pop();
-				printf("%d\n", temp);
-			}
-		}
-		else {
-			myheap.push(x);
-		}
-	}
+  heap<int> myheap(n);
+  //myheapì€ ê°€ì¥ í° ì›ì†Œë¥¼ topì— ë‘ 
+  //ì¸ìë¡œ ì¤€ í‘í„°ê°€ ì• ì¸ìê°€ ë” ì‘ì€ì§€ í™•ì¸í•˜ëŠ” ê±°ë¼
+  //ì¸ì(ë¶€ëª¨, ìì‹)í•´ì„œ trueë©´ swapí•˜ê¸° ë•Œë¬¸ì—
+  //ì‘ì€ ë¶€ëª¨ëŠ” ìì‹ê³¼ ìŠ¤ì™‘ë¨ã… ã… 
+  //í˜¸ì—ì—ì—ã…”ì—¥ ë„˜ëª¨ë„˜ëª¨ ìŠ¬í¼ìš”ì˜¤
+  //there is biggest element at top
+  int temp;
+  while (n--)
+  {
+    scanf("%d", &x);
+    if (x == 0) {
+      if (myheap.size() == 0) {
+        printf("0\n");
+      }
+      else {
+        temp = myheap.top();
+        myheap.pop();
+        printf("%d\n", temp);
+      }
+    }
+    else {
+      myheap.push(x);
+    }
+  }
 
-	return 0;
+  return 0;
 }
