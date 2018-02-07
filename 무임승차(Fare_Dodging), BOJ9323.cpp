@@ -21,20 +21,18 @@ public:
 class path
 {
 public:
-	int min;
 	int dist_0; //무임
 	int dist_1; //유임
 	int dest;
 
-	path(int a, int b, int c, int d) {
-		min = a;
+	path(int b, int c, int d) {
 		dist_0 = b;
 		dist_1 = c;
 		dest = d;
 	};
 };
 bool operator>(path a, path b) {
-	return a.min > b.min;
+	return a.dist_0 > b.dist_0;
 }
 
 int n_city, n_road, start, endcity, basicprice, price_1, basicfine;
@@ -63,8 +61,8 @@ int dijkstra() {
 	priority_queue<path, vector<path>, greater<path>>pq;
 
 	dist[start][0] = 0;
-	dist[start][1] = basicprice*100;
-	pq.emplace(0, 0, basicprice*100, start);
+	dist[start][1] = basicprice * 100;
+	pq.emplace(0, basicprice * 100, start);
 	int curr;
 	int currdist_0, currdist_1, nextdist_0, nextdist_1;
 	while (!pq.empty()) {
@@ -79,12 +77,12 @@ int dijkstra() {
 		for (road next : edge[curr]) {
 
 			nextdist_0 = min(currdist_0, currdist_1) + (next.dist*price_1 + basicfine)*next.p;
-			nextdist_1 = min(currdist_0 + basicprice*100, currdist_1) + next.dist*price_1*100;
+			nextdist_1 = min(currdist_0 + basicprice * 100, currdist_1) + next.dist*price_1 * 100;
 
 			if (min(nextdist_0, nextdist_1) < min(dist[next.dest][0], dist[next.dest][1])) {
 				dist[next.dest][0] = min(dist[next.dest][0], nextdist_0);
 				dist[next.dest][1] = min(dist[next.dest][1], nextdist_1);
-				pq.emplace(min(dist[next.dest][0], dist[next.dest][1]), dist[next.dest][0], dist[next.dest][1], next.dest);
+				pq.emplace(dist[next.dest][0], dist[next.dest][1], next.dest);
 			}
 		}
 	}
@@ -96,7 +94,7 @@ int main() {
 	while (testcase--)
 	{
 		getinput();
-		printf("%.2f\n", (float)dijkstra()/100);
+		printf("%.2f\n", (float)dijkstra() / 100);
 
 		for (int i = 0; i < 205; i++)
 			edge[i].clear();
