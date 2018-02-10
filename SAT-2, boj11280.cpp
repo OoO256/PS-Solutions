@@ -5,7 +5,9 @@
 #include <memory>
 #include <algorithm>
 #include <stack>
+#include <functional>
 using namespace std;
+typedef pair<int, int>ii;
 
 int n;
 class TwoSat
@@ -16,7 +18,8 @@ public:
 	vector<int>discover;
 	vector<int>sccId;
 	stack<int>st;
-	int size;
+	vector<int>result;
+	int MAX;
 	int vertexCounter = 0, sccCounter = 0;
 
 	TwoSat();
@@ -31,7 +34,7 @@ public:
 	bool IsPossible(void) {
 		for (int i = 1; i <= n; i++)
 		{
-			if (sccId[i] == sccId[i + n])
+			if (sccId[Idx(i)] == sccId[oppo(Idx(i))])
 			{
 				return false;
 			}
@@ -40,46 +43,39 @@ public:
 	}
 
 	int oppo(int a) {
-		if (a > n)
-		{
-			return a - n;
-		}
-		else {
-			return a + n;
-		}
+		if (a % 2)
+			return a - 1;
+		else
+			return a + 1;
 	}
 
 	int Idx(int a) {
 		if (a > 0)
-			return a;
+			return 2*a -2;
 		else
-			return -a + n;
+			return -2*a - 1;
 	}
+
+	void AssignTF();
+	void printResult();
 };
 
 TwoSat::TwoSat()
 {
-	size = 2 * n;
-	edge.resize(size + 1);
-	discover.resize(size + 1, -1);
-	sccId.resize(size + 1, -1);
+	MAX = 2 * n;
+	edge.resize(MAX);
+	discover.resize(MAX, -1);
+	sccId.resize(MAX, -1);
+	result.resize(MAX/2, -1);
 
 }
 
 void TwoSat::Tarjan() {
-	for (int i = 1; i <= n; i++)
+	for (int i = 0; i < MAX; i++)
 	{
 		if (discover[i] == -1)
 		{
 			Scc(i);
-		}
-	}
-
-	for (int i = 1; i <= n; i++)
-	{
-		if (discover[i + n] == -1)
-		{
-			Scc(i + n);
 		}
 	}
 }
@@ -114,6 +110,31 @@ int TwoSat::Scc(int curr) {
 	return ret;
 }
 
+void TwoSat::AssignTF() {
+	vector<pair<int, int>>nodes(MAX);
+	for (int i = 0; i < MAX; i++)
+	{
+		nodes[i] = ii(sccId[i], i);
+	}
+	sort(nodes.begin(), nodes.end());
+	reverse(nodes.begin(), nodes.end());
+
+	for (int i = 0; i < MAX; i++)
+	{
+		int var = nodes[i].second;
+		if (result[var/2] == -1)
+		{
+			result[var / 2] = var % 2;
+		}
+	}
+}
+
+void TwoSat::printResult() {
+	for (int i = 0; i < n; i++)
+	{
+		printf("%d ", result[i]);
+	}	
+}
 
 int main() {
 	int m;
@@ -127,13 +148,19 @@ int main() {
 		ts->ConnectEdge(ts->oppo(ts->Idx(a)), ts->Idx(b));
 		ts->ConnectEdge(ts->oppo(ts->Idx(b)), ts->Idx(a));
 	}
-
-
-
-
+	
 	ts->Tarjan();
 
-	printf("%d\n", ts->IsPossible());
+	const bool tsIsPossible = ts->IsPossible();
+
+	printf("%d\n", tsIsPossible);
+
+	if (tsIsPossible)
+	{
+		ts->AssignTF();
+		ts->printResult();
+		printf("\n");
+	}
 
 	return 0;
 
