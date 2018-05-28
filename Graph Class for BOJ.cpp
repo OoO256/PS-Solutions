@@ -4,121 +4,132 @@
 #include <queue>
 #include <memory>
 #include <functional>
+#include <limits>
 using namespace std;
 typedef pair<int, int> ii;
+using ll = long long;
+const int MOD = 1'000'000'007;
 
-vector<vector<int>>dp;
-
-enum class TypeOfGraph
-{
-	unweighted_directed
-	, unweighted_undirected
-	, weighted_directed
-	, weighted_undirected
-};
-
-struct next_prev
-{
-	int next, prev;
-	next_prev(int n, int p) : next(n), prev(p) {}
-};
-
-class Graph
-{
+template<typename ConcreteGraph>
+class Graph {
 public:
-	int size = 0;
+	int size = 0, edge = 0;
 
-	template<typename T>
-	vector<vector<T>>adj;
-
-	Graph() {};
-	Graph(int _size);
-	Graph(int _size, int edge, enum TypeOfGraph tog);
-
-	template<typename Func>
-	void BFS(int start, Func F);
+	int dijkstra(int start, int end) {
+		static_cast<ConcreteGraph>(this)->dijkstra(start, end);
+	}
+private:
+	Graph() = default;
+	Graph(int size) : size(size) {}
+	Graph(int size, int edge) : size(size), edge(edge) {}
+	friend ConcreteGraph;
 };
 
 template<typename T>
-Graph::Graph(int _size)
-{
-	size = _size;
-	adj.resize(size);
-}
+class WeightedGraph : Graph<WeightedGraph<T>> {
+public:
+	vector<vector<pair<T, T>>> adj;
 
-template<typename T>
-Graph::Graph(int _size, int edge, enum TypeOfGraph tog) {
-	size = _size;
-	adj.resize(size);
+	WeightedGraph(int size)
+		: Graph<WeightedGraph<T>>(size), adj(size) {}
 
-	int from, to, weight;
-	for (int i = 0; i < edge; i++)
-	{
-		switch (tog)
-		{
-		case TypeOfGraph::unweighted_directed:
-			scanf("%d %d", &from, &to);
-			adj[from].emplace_back(to);
-			break;
-		case TypeOfGraph::unweighted_undirected:
-			scanf("%d %d", &from, &to);
-			adj[from].emplace_back(to);
-			adj[to].emplace_back(from);
-			break;
-		case TypeOfGraph::weighted_directed:
-			scanf("%d %d %d", &from, &to, &weight);
+	WeightedGraph(int size, int edge)
+		: Graph<WeightedGraph<T>>(size, edge), adj(size) {}
+
+	WeightedGraph& getinput_directed(int edge) {
+		T from, to, weight;
+		for (int i = 0; i < edge; i++) {
+			cin >> from >> to >> weight;
 			adj[from].emplace_back(to, weight);
-			break;
-		case TypeOfGraph::weighted_undirected:
-			scanf("%d %d %d", &from, &to, &weight);
+		}
+		return *this;
+
+	}
+
+	WeightedGraph& getinput_undirected(int edge) {
+		T from, to, weight;
+		for (int i = 0; i < edge; i++) {
+			cin >> from >> to >> weight;
 			adj[from].emplace_back(to, weight);
 			adj[to].emplace_back(from, weight);
-			break;
-		default:
-			break;
+		}
+		return *this;
+	}
+};
+
+template<typename T>
+class UnweightedGraph : Graph<UnweightedGraph<T>> {
+public:
+	vector<vector<T>> adj;
+
+	UnweightedGraph(int size)
+		: Graph<UnweightedGraph<T>>(size), adj(size) {}
+
+	UnweightedGraph(int size, int edge)
+		: Graph<UnweightedGraph<T>>(size, edge), adj(size) {}
+
+	UnweightedGraph& getinput_directed(int edge) {
+		T from, to;
+		for (int i = 0; i < edge; i++) {
+			cin >> from >> to;
+			adj[from].push_back(to);
+		}
+		return *this;
+	}
+
+	UnweightedGraph& getinput_undirected(int edge) {
+		T from, to;
+		for (int i = 0; i < edge; i++) {
+			cin >> from >> to;
+			adj[from].push_back(to);
+			adj[to].push_back(from);
+		}
+		return *this;
+	}
+};
+
+template<typename T>
+ll getDP(UnweightedGraph<T> const& tree,
+	const int CURR, const int K,
+	vector<vector<ll>>& dp,
+	vector<bool>& vis
+) {
+
+	if (dp[CURR][K] != -1) {
+		return dp[CURR][K];
+	}
+
+	vector<int>child;
+	child.reserve(tree.adj[CURR].size());
+	int unVisitedChildCnt = 0;
+	for (const int c : tree.adj[CURR]) {
+		if (vis[c] == false) {
+			child.push_back(c);
+			unVisitedChildCnt++;
+		}
+	}
+
+	if (unVisitedChildCnt == 0) {
+		if (K > 1) {
+			return 0;
+		}
+		else {
+			return 1;
 		}
 	}
 }
-
-template<typename Func>
-void BFS(int start, Func F) {
-
-	queue<next_prev>q;
-	
-	for (auto next : adj[start])
-	{
-		q.emplace(next, start);
-	}
-
-
-	for (int i = 0; i < size; i++)
-	{
-		dp[start][i] = i + 1;
-	}
-
-	while (!q.empty())
-	{
-		const int curr = q.front().next;
-		const int before = q.front().prev;
-
-		for (int i = 0; i < size; i++)
-		{
-			F();
-		}
-	}
-
-}
-
 
 int main() {
-	int n, m;
-	scanf("%d %d", &n, &m);
-	Graph tree(n, m, TypeOfGraph::unweighted_directed);
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
 
-	dp.resize(n, vector<int>(n));
-	const int ROOT = 1;
+	int n, k;
+	cin >> n >> k;
 
-	tree.BFS(ROOT, [&]() {dp[curr]});
+	UnweightedGraph<int>tree(n + 1, n - 1);
+	tree.getinput_undirected(n - 1);
 
-
+	vector<vector<ll>>dp(n + 1, vector<ll>(k, 0));
+	vector<bool>vis(n + 1, false);
+	cout << getDP(tree, 1, k, dp, vis);
 }
